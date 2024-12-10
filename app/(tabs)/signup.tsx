@@ -1,4 +1,11 @@
-import { View, Text, TextInput, Button, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 import { Formik } from "formik";
 import * as Yup from "yup";
 import { useAuth } from "@/context/AuthContext";
@@ -12,15 +19,14 @@ export default function signup() {
     const success = signUp(values.email, values.password);
 
     if (success) {
-      alert('Registration has successfull');
-      navigation.navigate('login');
+      alert("Registration has successfull");
+      navigation.navigate("login");
     } else {
-      alert('User/email already exists.');
+      alert("User/email already exists.");
     }
   };
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Sign Up</Text>
       <Formik
         initialValues={{ email: "", password: "", confirmPassword: "" }}
         validationSchema={Yup.object().shape({
@@ -29,6 +35,11 @@ export default function signup() {
             .required("Email is required"),
           password: Yup.string()
             .min(6, "Password must be at least 6 characters")
+            .max(20, "Password cannot exceed 20 characters")
+            .matches(
+              /[!@#$%^&*(),.?":{}|<>]/,
+              "Must have least one special characters"
+            )
             .required("Password is required"),
           confirmPassword: Yup.string()
             .oneOf([Yup.ref("password")], "Passwords must match")
@@ -44,7 +55,8 @@ export default function signup() {
           errors,
           touched,
         }) => (
-          <View>
+          <View style={styles.container}>
+            <Text style={styles.title}>Sign Up</Text>
             <TextInput
               style={styles.input}
               placeholder="Email"
@@ -80,7 +92,17 @@ export default function signup() {
               <Text style={styles.error}>{errors.confirmPassword}</Text>
             )}
 
-            <Button title="Sign Up" onPress={() => handleSubmit()} />
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={styles.buttons} onPress={handleSubmit}>
+                <Text style={styles.buttonText}>Sign Up</Text>
+              </TouchableOpacity>
+              {/* <Button
+                style={styles.buttons}
+                title="Sign Up"
+                onPress={() => handleSubmit()}
+                color="#4CAF50"
+              /> */}
+            </View>
           </View>
         )}
       </Formik>
@@ -89,14 +111,41 @@ export default function signup() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 20 },
-  title: { fontSize: 24, textAlign: "center", marginBottom: 20 },
+  container: { display:"flex", justifyContent: "center", padding: 20
+    ,alignItems:"center",
+    flexDirection:"column",
+    height:"100%",
+    width:"100%"
+   },
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#1e90ff",
+    marginBottom: 40,
+    textAlign: "center",
+  },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 5,
+    borderRadius: 15,
     padding: 10,
     marginBottom: 10,
+    width:"100%"
+  },
+  buttonContainer: {
+    marginTop: 20,
+    borderRadius: 15,
+  },
+  buttons: {
+    backgroundColor: "#1e90ff",
+    padding: 10,
+    borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    textAlign: "center",
   },
   error: { color: "red", fontSize: 12, marginBottom: 10 },
 });

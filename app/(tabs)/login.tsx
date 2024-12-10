@@ -1,19 +1,28 @@
-import React from "react";
-import { View, Text, TextInput, Button, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  TouchableOpacity,
+  CheckBox,
+} from "react-native";
 import { Formik } from "formik";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import * as Yup from "yup";
 
 export default function Login() {
+  const [rememberMe, setRememberMe] = useState(false);
   const navigation = useNavigation();
   const { signIn, user } = useAuth();
 
   const handleSubmit = (values: { email: string; password: string }) => {
-    const success = signIn(values.email, values.password);
+    const success = signIn(values.email, values.password, rememberMe);
 
     if (success) {
-      navigation.navigate('index');
+      navigation.navigate("index");
       console.log("logged in");
     } else {
       alert("Invalid email or password.");
@@ -22,13 +31,10 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Sign In</Text>
       <Formik
         initialValues={{ email: "", password: "" }}
         validationSchema={Yup.object().shape({
-          email: Yup.string()
-            .email("Invalid email")
-            .required("Email required"),
+          email: Yup.string().email("Invalid email").required("Email required"),
           password: Yup.string()
             .min(6, "Password must be at least 6 characters")
             .required("Password required"),
@@ -43,8 +49,8 @@ export default function Login() {
           errors,
           touched,
         }) => (
-          <View>
-          
+          <View style={styles.container}>
+            <Text style={styles.title}>Sign In</Text>
             <TextInput
               style={styles.input}
               placeholder="Email"
@@ -56,7 +62,6 @@ export default function Login() {
               <Text style={styles.error}>{errors.email}</Text>
             )}
 
-       
             <TextInput
               style={styles.input}
               placeholder="Password"
@@ -68,29 +73,101 @@ export default function Login() {
             {touched.password && errors.password && (
               <Text style={styles.error}>{errors.password}</Text>
             )}
-
-            <Button title="Sign In" onPress={() => handleSubmit()} />
+            <View style={styles.checkboxContainer}>
+              <CheckBox
+                value={rememberMe}
+                onValueChange={setRememberMe}
+                style={styles.checkbox}
+              />
+              <Text style={styles.checkboxLabel}>Remember Me</Text>
+            </View>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={styles.buttons}
+                onPress={() => handleSubmit()}
+              >
+                <Text style={styles.buttonText}>Sign in</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.signupbuttonContainer}>
+              <Text style={styles.text}>not have account, Sign Up</Text>
+              <TouchableOpacity
+                style={styles.buttons}
+                onPress={() => navigation.navigate("signup")}
+              >
+                <Text style={styles.buttonText}>Go to Sign Up</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </Formik>
-
-      <Button
-        title="Go to Sign Up"
-        onPress={() => navigation.navigate("signup")}
-      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 20 },
-  title: { fontSize: 24, textAlign: "center", marginBottom: 20 },
+  container: {
+    display: "flex",
+    justifyContent: "center",
+    padding: 20,
+    alignItems: "center",
+    flexDirection: "column",
+    height: "100%",
+    width: "100%",
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#1e90ff",
+    marginBottom: 40,
+    textAlign: "center",
+  },
+  text: {
+    fontSize: 16,
+    textAlign: "center",
+    margin: 20,
+    color: "#333",
+  },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 5,
+    borderRadius: 15,
     padding: 10,
     marginBottom: 10,
+    width: "100%",
   },
-  error: { color: "red", fontSize: 12, marginBottom: 10 },
+  buttonContainer: {
+    marginTop: 20,
+    borderRadius: 15,
+  },
+  signupbuttonContainer: {
+    marginBottom: 200,
+    borderRadius: 15,
+  },
+  buttons: {
+    backgroundColor: "#1e90ff",
+    padding: 10,
+    borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  checkbox: {
+    marginRight: 10,
+  },
+  checkboxLabel: {
+    fontSize: 16,
+  },
+  error: {
+    color: "red",
+    fontSize: 12,
+    marginBottom: 10,
+  },
 });

@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface User {
   email: string;
@@ -7,7 +8,7 @@ interface User {
 
 interface AuthContextProps {
   user: string | null;
-  signIn: (email: string, password: string) => boolean;
+  signIn: (email: string, password: string, rememberMe: boolean) => boolean;
   signOut: () => void;
   signUp: (email: string, password: string) => boolean;
 }
@@ -18,34 +19,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<string | null>(null);
   const [registeredUsers, setRegisteredUsers] = useState<User[]>([]);
 
-  // console.log(user,registeredUsers,"from sign up")
+  useEffect(() => {
+    const checkSavedEmail = async () => {
+      const savedEmail = await AsyncStorage.getItem('email');
+      const savedPassword = await AsyncStorage.getItem('password');
+      if (savedEmail) {
+        setUser(savedEmail); 
+        setRegisteredUsers([...registeredUsers, { savedEmail, savedPassword }]);
+      }
+    };
+    checkSavedEmail();
+  }, []);
 
   const signUp = (email: string, password: string) => {
     const userExists = registeredUsers.some((user) => user.email === email);
-    
+
     if (userExists) {
-      return false; 
+      return false;
     }
 
     setRegisteredUsers([...registeredUsers, { email, password }]);
-    return true; 
+    return true;
   };
 
-  const signIn = (email: string, password: string) => {
+  const signIn = async (email: string, password: string, rememberMe: boolean) => {
     const user = registeredUsers.find(
       (user) => user.email === email && user.password === password
     );
 
     if (user) {
       setUser(email);
-      return true; 
+      if (rememberMe) {
+        await AsyncStorage.setItem('email', email);
+        await AsyncStorage.setItem('password', password);
+      } else {
+        await AsyncStorage.removeItem('email');
+        await AsyncStorage.removeItem('password');
+      }
+
+      return true;
     }
 
-    return false; 
+    return false;
   };
 
-  const signOut = () => {
+  const signOut = async () => {
     setUser(null);
+    await AsyncStorage.removeItem('email'); 
+    await AsyncStorage.removeItem('password'); 
   };
 
   return (
@@ -58,8 +79,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('error error error');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
+
 
