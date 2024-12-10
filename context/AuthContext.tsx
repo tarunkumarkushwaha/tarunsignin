@@ -1,5 +1,11 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  ReactNode,
+  useEffect,
+} from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface User {
   email: string;
@@ -8,8 +14,8 @@ interface User {
 
 interface AuthContextProps {
   user: string | null;
-  signIn: (email: string, password: string, rememberMe: boolean) => boolean;
-  signOut: () => void;
+  signIn: (email: string, password: string) => Promise<boolean>;
+  signOut: () => Promise<void>;
   signUp: (email: string, password: string) => boolean;
 }
 
@@ -19,19 +25,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<string | null>(null);
   const [registeredUsers, setRegisteredUsers] = useState<User[]>([]);
 
+  console.log(user, registeredUsers);
+
   useEffect(() => {
-    const checkSavedEmail = async () => {
-      const savedEmail = await AsyncStorage.getItem('email');
-      const savedPassword = await AsyncStorage.getItem('password');
-      if (savedEmail) {
-        setUser(savedEmail); 
-        setRegisteredUsers([...registeredUsers, { savedEmail, savedPassword }]);
+    const initializeAuth = async () => {
+      try {
+        const Loggeduser = await AsyncStorage.getItem("user");
+        const LoggedregisteredUsers = await AsyncStorage.getItem(
+          "registeredusers"
+        );
+        if (LoggedregisteredUsers) {
+          setRegisteredUsers(JSON.parse(LoggedregisteredUsers));
+        }
+        if (Loggeduser) {
+          setUser(Loggeduser);
+        }
+      } catch (error) {
+        console.error("Error loading user from AsyncStorage:", error);
       }
     };
-    checkSavedEmail();
+
+    initializeAuth();
   }, []);
 
-  const signUp = (email: string, password: string) => {
+  const signUp = async (email: string, password: string) => {
     const userExists = registeredUsers.some((user) => user.email === email);
 
     if (userExists) {
@@ -39,22 +56,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setRegisteredUsers([...registeredUsers, { email, password }]);
-    return true;
+
+    const jsonValue = JSON.stringify([...registeredUsers, { email, password }]);
+    await AsyncStorage.setItem("registeredusers", jsonValue);
   };
 
-  const signIn = async (email: string, password: string, rememberMe: boolean) => {
-    const user = registeredUsers.find(
+  const signIn = async (email: string, password: string): Promise<boolean> => {
+    const existingUser = registeredUsers.find(
       (user) => user.email === email && user.password === password
     );
 
-    if (user) {
+    if (existingUser) {
       setUser(email);
-      if (rememberMe) {
-        await AsyncStorage.setItem('email', email);
-        await AsyncStorage.setItem('password', password);
-      } else {
-        await AsyncStorage.removeItem('email');
-        await AsyncStorage.removeItem('password');
+      try {
+        await AsyncStorage.setItem("user", email);
+      } catch (error) {
+        console.error("Error saving user to AsyncStorage:", error);
       }
 
       return true;
@@ -63,10 +80,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return false;
   };
 
-  const signOut = async () => {
+  const signOut = async (): Promise<void> => {
     setUser(null);
-    await AsyncStorage.removeItem('email'); 
-    await AsyncStorage.removeItem('password'); 
+    try {
+      await AsyncStorage.removeItem("user");
+    } catch (error) {
+      console.error("Error removing user from AsyncStorage:", error);
+    }
   };
 
   return (
@@ -79,9 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
-
-

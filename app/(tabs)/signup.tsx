@@ -10,8 +10,22 @@ import { Formik } from "formik";
 import * as Yup from "yup";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
+import { useState } from "react";
 
 export default function signup() {
+  const [passwordStrength, setPasswordStrength] = useState<string>("");
+
+  const handlePasswordChange = (password: string) => {
+    if (password.length < 6) {
+      setPasswordStrength("Weak");
+    } else if (
+      /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])/.test(password)
+    ) {
+      setPasswordStrength("Strong");
+    } else {
+      setPasswordStrength("Medium");
+    }
+  };
   const { signUp } = useAuth();
   const navigation = useNavigation();
 
@@ -72,13 +86,29 @@ export default function signup() {
               style={styles.input}
               placeholder="Password"
               secureTextEntry
-              onChangeText={handleChange("password")}
+              onChangeText={(text) => {
+                handleChange("password")(text);
+                handlePasswordChange(text);
+              }}
               onBlur={handleBlur("password")}
               value={values.password}
             />
             {touched.password && errors.password && (
               <Text style={styles.error}>{errors.password}</Text>
             )}
+            <>
+            {values.password && 
+              <Text
+                style={[
+                  styles.passwordStrength,
+                  passwordStrength === "Weak" && styles.weak,
+                  passwordStrength === "Medium" && styles.medium,
+                  passwordStrength === "Strong" && styles.strong,
+                ]}
+              >
+                Password Strength: {passwordStrength}
+              </Text>
+            }</>
 
             <TextInput
               style={styles.input}
@@ -111,12 +141,15 @@ export default function signup() {
 }
 
 const styles = StyleSheet.create({
-  container: { display:"flex", justifyContent: "center", padding: 20
-    ,alignItems:"center",
-    flexDirection:"column",
-    height:"100%",
-    width:"100%"
-   },
+  container: {
+    display: "flex",
+    justifyContent: "center",
+    padding: 20,
+    alignItems: "center",
+    flexDirection: "column",
+    height: "100%",
+    width: "100%",
+  },
   title: {
     fontSize: 32,
     fontWeight: "bold",
@@ -130,7 +163,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 10,
     marginBottom: 10,
-    width:"100%"
+    width: "100%",
   },
   buttonContainer: {
     marginTop: 20,
@@ -146,6 +179,18 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     textAlign: "center",
+  },
+  passwordStrength: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  weak: { color: "red" },
+  medium: { color: "orange" },
+  strong: { color: "green" },
+  buttonContainer: {
+    marginTop: 20,
+    borderRadius: 15,
   },
   error: { color: "red", fontSize: 12, marginBottom: 10 },
 });
