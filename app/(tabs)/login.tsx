@@ -5,23 +5,27 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
-  CheckBox,
+  CheckBox
 } from "react-native";
+// import CheckBox from "@react-native-community/checkbox";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Formik } from "formik";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import * as Yup from "yup";
+import { RootStackParamList } from "@/types/navigation";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export default function Login() {
-  const [rememberMe, setRememberMe] = useState(false);
+  // const [rememberMe, setRememberMe] = useState(false);
   const [credentialsLoaded, setCredentialsLoaded] = useState(false);
-  const navigation = useNavigation();
+  const navigation: NativeStackNavigationProp<RootStackParamList> = useNavigation();
   const { signIn } = useAuth();
 
   const [initialValues, setInitialValues] = useState({
     email: "",
     password: "",
+    rememberMe: false
   });
 
   useEffect(() => {
@@ -30,8 +34,8 @@ export default function Login() {
         const email = await AsyncStorage.getItem("email");
         const password = await AsyncStorage.getItem("password");
         if (email && password) {
-          setInitialValues({ email, password });
-          setRememberMe(true);
+          setInitialValues({ email, password, rememberMe: true });
+          // setRememberMe(true);
         }
       } catch (error) {
         console.error("Error fetching stored credentials", error);
@@ -43,11 +47,11 @@ export default function Login() {
     fetchStoredCredentials();
   }, []);
 
-  const handleSubmit = async (values: { email: string; password: string }) => {
-    const success = await signIn(values.email, values.password, rememberMe);
+  const handleSubmit = async (values: { email: string; password: string, rememberMe: boolean }) => {
+    const success = await signIn(values.email, values.password, values.rememberMe);
 
     if (success) {
-      if (rememberMe) {
+      if (values.rememberMe) {
         await AsyncStorage.setItem("email", values.email);
         await AsyncStorage.setItem("password", values.password);
       } else {
@@ -70,7 +74,11 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
-      <Formik
+      <Formik<{
+        email: string;
+        password: string;
+        rememberMe: boolean;
+      }>
         initialValues={initialValues}
         enableReinitialize
         validationSchema={Yup.object().shape({
@@ -86,10 +94,11 @@ export default function Login() {
         {({
           handleChange,
           handleBlur,
-          handleSubmit,
           values,
           errors,
           touched,
+          handleSubmit: submitForm,
+          setFieldValue
         }) => (
           <View style={styles.container}>
             <Text style={styles.title}>Sign In</Text>
@@ -118,8 +127,8 @@ export default function Login() {
 
             <View style={styles.checkboxContainer}>
               <CheckBox
-                value={rememberMe}
-                onValueChange={setRememberMe}
+                value={values.rememberMe}
+                onValueChange={(val) => setFieldValue("rememberMe", val)}
                 style={styles.checkbox}
               />
               <Text style={styles.checkboxLabel}>Remember Me</Text>
@@ -128,7 +137,7 @@ export default function Login() {
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={styles.buttons}
-                onPress={() => handleSubmit()}
+                onPress={() => submitForm()}
               >
                 <Text style={styles.buttonText}>Sign in</Text>
               </TouchableOpacity>

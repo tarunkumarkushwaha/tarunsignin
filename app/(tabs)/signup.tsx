@@ -11,6 +11,8 @@ import * as Yup from "yup";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
+import { RootStackParamList } from "@/types/navigation";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export default function signup() {
   const [passwordStrength, setPasswordStrength] = useState<string>("");
@@ -27,10 +29,10 @@ export default function signup() {
     }
   };
   const { signUp } = useAuth();
-  const navigation = useNavigation();
+  const navigation: NativeStackNavigationProp<RootStackParamList> = useNavigation();
 
-  const handleSubmit = (values: { email: string }) => {
-    const success = signUp(values.email, values.password);
+  const handleSubmit = async (values: { email: string, password: string }) => {
+    const success = await signUp(values.email, values.password);
 
     if (success) {
       alert("Registration has successfull");
@@ -97,18 +99,18 @@ export default function signup() {
               <Text style={styles.error}>{errors.password}</Text>
             )}
             <>
-            {values.password && 
-              <Text
-                style={[
-                  styles.passwordStrength,
-                  passwordStrength === "Weak" && styles.weak,
-                  passwordStrength === "Medium" && styles.medium,
-                  passwordStrength === "Strong" && styles.strong,
-                ]}
-              >
-                Password Strength: {passwordStrength}
-              </Text>
-            }</>
+              {values.password &&
+                <Text
+                  style={[
+                    styles.passwordStrength,
+                    passwordStrength === "Weak" && styles.weak,
+                    passwordStrength === "Medium" && styles.medium,
+                    passwordStrength === "Strong" && styles.strong,
+                  ]}
+                >
+                  Password Strength: {passwordStrength}
+                </Text>
+              }</>
 
             <TextInput
               style={styles.input}
@@ -123,7 +125,10 @@ export default function signup() {
             )}
 
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.buttons} onPress={handleSubmit}>
+              <TouchableOpacity
+                style={styles.buttons}
+                onPress={() => handleSubmit()}
+              >
                 <Text style={styles.buttonText}>Sign Up</Text>
               </TouchableOpacity>
               {/* <Button
@@ -188,9 +193,5 @@ const styles = StyleSheet.create({
   weak: { color: "red" },
   medium: { color: "orange" },
   strong: { color: "green" },
-  buttonContainer: {
-    marginTop: 20,
-    borderRadius: 15,
-  },
   error: { color: "red", fontSize: 12, marginBottom: 10 },
 });

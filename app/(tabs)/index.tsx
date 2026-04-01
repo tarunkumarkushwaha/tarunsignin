@@ -2,9 +2,11 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
+import { RootStackParamList } from "@/types/navigation";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export default function HomeScreen() {
-  const navigation = useNavigation();
+  const navigation: NativeStackNavigationProp<RootStackParamList> = useNavigation();
   const { user, signOut } = useAuth();
 
   return (

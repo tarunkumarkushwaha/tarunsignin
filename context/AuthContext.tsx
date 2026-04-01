@@ -14,9 +14,9 @@ interface User {
 
 interface AuthContextProps {
   user: string | null;
-  signIn: (email: string, password: string) => Promise<boolean>;
+  signIn: (email: string, password: string, rememberMe: boolean) => Promise<boolean>;
   signOut: () => Promise<void>;
-  signUp: (email: string, password: string) => boolean;
+  signUp: (email: string, password: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -59,6 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const jsonValue = JSON.stringify([...registeredUsers, { email, password }]);
     await AsyncStorage.setItem("registeredusers", jsonValue);
+    return true;
   };
 
   const signIn = async (email: string, password: string): Promise<boolean> => {
